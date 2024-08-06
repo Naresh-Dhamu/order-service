@@ -8,7 +8,7 @@ export class CustomerController {
     const { _id: userId, firstName, lastName, email } = req.auth;
     const customer = await customerModel.findOne({ userId });
     if (!customer) {
-      const newCutomer = await customerModel.create({
+      await customerModel.create({
         userId,
         firstName,
         lastName,
@@ -16,7 +16,6 @@ export class CustomerController {
         addresses: [],
       });
       logger.info("New customer created");
-      return res.json(newCutomer);
     }
 
     res.json(customer);

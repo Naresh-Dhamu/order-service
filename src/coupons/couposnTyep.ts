@@ -5,3 +5,7 @@ export interface Coupons {
   discount: number;
   tenantId: string;
 }
+
+export interface Filter {
+  tenantId?: string;
+}

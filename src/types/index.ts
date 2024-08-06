@@ -12,3 +12,8 @@ export interface AuthRequest extends Request {
     tenant: string;
   };
 }
+
+export interface paginateQuery {
+  page: number;
+  limit: number;
+}

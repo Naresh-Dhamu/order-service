@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
+import mongoose, { AggregatePaginateModel } from "mongoose";
 import { Coupons } from "./couposnTyep";
-
-const couponsSchema = new mongoose.Schema<Coupons>(
+import aggregatePaginate from "mongoose-aggregate-paginate-v2";
+const couponSchema = new mongoose.Schema<Coupons>(
   {
     title: {
       type: String,
@@ -26,5 +26,9 @@ const couponsSchema = new mongoose.Schema<Coupons>(
   },
   { timestamps: true },
 );
-couponsSchema.index({ code: 1, tenantId: 1 }, { unique: true });
-export default mongoose.model<Coupons>("Coupons", couponsSchema);
+couponSchema.index({ code: 1, tenantId: 1 }, { unique: true });
+couponSchema.plugin(aggregatePaginate);
+export default mongoose.model<Coupons, AggregatePaginateModel<Coupons>>(
+  "Coupons",
+  couponSchema,
+);
