@@ -1,9 +1,9 @@
-import app from "./src/app";
+import app from "./app";
 import config from "config";
-import logger from "./src/config/logger";
-import connectDB from "./src/config/db";
-import { MessageBroker } from "./src/types/broker";
-import { createMessageBroker } from "./src/common/factories/brockerFactory";
+import logger from "./config/logger";
+import connectDB from "./config/db";
+import { MessageBroker } from "./types/broker";
+import { createMessageBroker } from "./common/factories/brockerFactory";
 const startServer = async () => {
   const PORT = config.get("server.port") || 5503;
   let broker: MessageBroker | null = null;
