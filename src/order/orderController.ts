@@ -19,7 +19,6 @@ import { PaymentGW } from "../payment/paymentTypes";
 export class OrderController {
   constructor(private paymentGw: PaymentGW) {}
   create = async (req: Request, res: Response, next: NextFunction) => {
-    console.log("dsfjhdgfdsjhg", req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).send({ errors: errors.array() });
@@ -48,10 +47,9 @@ export class OrderController {
     const DELEVERY_CHARGE = 50;
     const finalTotal = priceAfterDiscount + taxes + DELEVERY_CHARGE;
     const idempotencyKey = req.headers["idempotency-key"];
-    console.log("idempotencyKey", idempotencyKey);
+
     const idempotency = await idempotencyModel.findOne({ key: idempotencyKey });
 
-    console.log("idempotency", idempotency);
     let newOrder = idempotency ? [idempotency.response] : [];
     if (!idempotency) {
       const session = await mongoose.startSession();

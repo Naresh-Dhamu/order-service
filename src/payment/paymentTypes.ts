@@ -12,10 +12,10 @@ interface PaymentSession {
   paymentStatus: GetewayPaymentStatus;
 }
 
-interface CustomMetadata {
+export interface CustomMetadata {
   orderId: string;
 }
-interface VerifiedSession {
+export interface VerifiedSession {
   id: string;
   metadata: CustomMetadata;
   paymentStatus: GetewayPaymentStatus;
