@@ -7,3 +7,7 @@ database:
   url: mongodb+srv://nareshsuthar1229:rmBlTHTRnZMlIa8v@cluster0.lb8ejo0.mongodb.net/order-service?authSource=admin&w=1
 kafka:
   broker: localhost:9092
+stripe:
+  secretKey: sk_test_51Pl8p4SAuuIals3eIYpk6IfOsp5uYHAzB7HofZsbhwuxcnpEcb8ksvWF2Ea3X3XncIR3gqg5XCGb1D3W3SKvr62b00OaBbnvnv
+frontend:
+  clientUrl: http://localhost:3000
