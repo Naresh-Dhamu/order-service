@@ -31,8 +31,9 @@ export class OrderController {
     const priceAfterDiscount = totalPrice - discountAmount;
     const TATEX_PERCENT = 18;
     const taxes = Math.round((priceAfterDiscount * TATEX_PERCENT) / 100);
-
-    return res.send({ taxes: taxes });
+    const DEleVERY_CHARGE = 50;
+    const finalTotal = priceAfterDiscount + taxes + DEleVERY_CHARGE;
+    return res.send({ finalTotal: finalTotal });
   };
 
   private calculateTotal = async (cart: CartItem[]) => {
