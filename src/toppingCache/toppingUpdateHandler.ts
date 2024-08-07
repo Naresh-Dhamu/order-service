@@ -5,7 +5,7 @@ export const handleToppingUpdate = async (value: string) => {
   const topping: ToppingMessage = JSON.parse(value);
   return await toppingCacheModel.updateOne(
     {
-      toppingId: topping.id,
+      toppingId: topping._id,
     },
     {
       $set: {

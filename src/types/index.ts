@@ -41,7 +41,7 @@ export interface ProductMessage {
   priceConfiguration: PriceConfiguration;
 }
 export interface ToppingMessage {
-  id: string;
+  _id: string;
   price: number;
 }
 

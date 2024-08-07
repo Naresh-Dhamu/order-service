@@ -9,18 +9,27 @@ import {
 import productCacheModel from "../productCache/productCacheModel";
 import toppingCacheModel from "../toppingCache/toppingCacheModel";
 import couponModel from "../coupons/couponModel";
+import orderModel from "./orderModel";
+import { OrderStatus, PaymentStatus } from "./orderTypes";
 
 export class OrderController {
   create = async (req: Request, res: Response) => {
-    const isEmpty = validationResult(req).isEmpty();
-    if (!isEmpty) {
-      return res.status(400).send({ errors: validationResult(req).array() });
+    console.log("dsfjhdgfdsjhg", req.body);
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).send({ errors: errors.array() });
     }
-
-    const totalPrice = await this.calculateTotal(req.body.cart);
+    const {
+      cart,
+      couponCode,
+      tenantId,
+      address,
+      paymentMode,
+      customerId,
+      comment,
+    } = req.body;
+    const totalPrice = await this.calculateTotal(cart);
     let discountPercentage = 0;
-    const couponCode = req.body.couponCode;
-    const tenantId = req.body.tenantId;
     if (couponCode) {
       discountPercentage = await this.getDiscountPercentage(
         couponCode,
@@ -31,9 +40,24 @@ export class OrderController {
     const priceAfterDiscount = totalPrice - discountAmount;
     const TATEX_PERCENT = 18;
     const taxes = Math.round((priceAfterDiscount * TATEX_PERCENT) / 100);
-    const DEleVERY_CHARGE = 50;
-    const finalTotal = priceAfterDiscount + taxes + DEleVERY_CHARGE;
-    return res.send({ finalTotal: finalTotal });
+    const DELEVERY_CHARGE = 50;
+    const finalTotal = priceAfterDiscount + taxes + DELEVERY_CHARGE;
+
+    const newOrder = await orderModel.create({
+      cart,
+      address,
+      comment,
+      customerId,
+      deliveryCharge: DELEVERY_CHARGE,
+      discount: discountAmount,
+      taxes,
+      tenantId,
+      total: finalTotal,
+      paymentMode,
+      orderStatus: OrderStatus.PECEIVED,
+      paymentStatus: PaymentStatus.PENDING,
+    });
+    return res.send({ order: newOrder });
   };
 
   private calculateTotal = async (cart: CartItem[]) => {
