@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { Request as AuthRequest } from "express-jwt";
 import { validationResult } from "express-validator";
 import {
   CartItem,
@@ -16,6 +17,7 @@ import mongoose from "mongoose";
 import createHttpError from "http-errors";
 import { PaymentGW } from "../payment/paymentTypes";
 import { MessageBroker } from "../types/broker";
+import customerModel from "../customer/customerModel";
 
 export class OrderController {
   constructor(
@@ -207,100 +209,19 @@ export class OrderController {
     return 0;
   };
 
-  get = async (req: Request, res: Response) => {
-    return res.send({});
+  getMine = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const userId = req.auth._id;
+    if (!userId) {
+      return next(createHttpError(400, "User not found"));
+    }
+    const customer = await customerModel.findOne({ userId });
+    if (!customer) {
+      return next(createHttpError(400, "No customer found"));
+    }
+    const orders = await orderModel.find(
+      { customerId: customer._id },
+      { cart: 0 },
+    );
+    return res.json(orders);
   };
 }
-
-// import { Request, Response } from "express";
-// import { validationResult } from "express-validator";
-// import {
-//   CartItem,
-//   ProductPricingCache,
-//   Topping,
-//   ToppingPricingCache,
-// } from "../types";
-// import productCacheModel from "../productCache/productCacheModel";
-// import toppingCacheModel from "../toppingCache/toppingCacheModel";
-
-// export class OrderController {
-//   create = async (req: Request, res: Response) => {
-//     const isEmpty = validationResult(req).isEmpty();
-//     if (!isEmpty) {
-//       return res.status(400).send({ errors: validationResult(req).array() });
-//     }
-//     const totalPrice = await this.calculateTotal(req.body.cart);
-//     return res.send({ totalPrice: totalPrice });
-//   };
-//   private calculateTotal = async (cart: CartItem[]) => {
-//     const productIds = cart.map((item) => item._id);
-//     const productPricings = await productCacheModel.find({
-//       productId: {
-//         $in: productIds,
-//       },
-//     });
-//     const cartToppingIds = cart.reduce((acc, item) => {
-//       return [
-//         ...acc,
-//         ...item.chosenConfiguration.selectedToppings.map(
-//           (topping) => topping._id,
-//         ),
-//       ];
-//     }, []);
-
-//     const toppingPricings = await toppingCacheModel.find({
-//       toppingId: {
-//         $in: cartToppingIds,
-//       },
-//     });
-
-//     const totalPrice = cart.reduce((acc, curr) => {
-//       const cachedProductPrice = productPricings.find(
-//         (product) => product.productId === curr._id,
-//       );
-//       return (
-//         acc +
-//         curr.qty * this.getItemTotal(curr, cachedProductPrice, toppingPricings)
-//       );
-//     }, 0);
-
-//     return totalPrice;
-//   };
-
-//   private getItemTotal = (
-//     item: CartItem,
-//     cachedProductPrice: ProductPricingCache,
-//     toppingPricing: ToppingPricingCache[],
-//   ) => {
-//     const toppingsTotal = item.chosenConfiguration.selectedToppings.reduce(
-//       (acc, curr) => {
-//         return acc + this.getCurrentToppingPrice(curr, toppingPricing);
-//       },
-//       0,
-//     );
-//     const productTotal = Object.entries(
-//       item.chosenConfiguration.priceConfiguration,
-//     ).reduce((acc, [key, value]) => {
-//       const price =
-//         cachedProductPrice.priceConfiguration[key].availableOptions[value];
-//       return acc + price;
-//     }, 0);
-//     return productTotal + toppingsTotal;
-//   };
-
-//   private getCurrentToppingPrice = (
-//     topping: Topping,
-//     toppingPricings: ToppingPricingCache[],
-//   ) => {
-//     const currentTopping = toppingPricings.find(
-//       (current) => topping._id === current.toppingId,
-//     );
-//     if (!currentTopping) {
-//       return topping.price;
-//     }
-//     return currentTopping.price;
-//   };
-//   get = async (req: Request, res: Response) => {
-//     return res.send({});
-//   };
-// }

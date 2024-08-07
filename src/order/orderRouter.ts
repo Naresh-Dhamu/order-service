@@ -9,6 +9,6 @@ const paymentGw = new StripeGW();
 const broker = createMessageBroker();
 const orderController = new OrderController(paymentGw, broker);
 
-router.get("/", asyncWrapper(orderController.get));
+router.get("/mine", authenticate, asyncWrapper(orderController.getMine));
 router.post("/", authenticate, asyncWrapper(orderController.create));
 export default router;
