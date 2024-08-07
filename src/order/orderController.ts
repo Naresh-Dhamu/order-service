@@ -8,6 +8,7 @@ import {
 } from "../types";
 import productCacheModel from "../productCache/productCacheModel";
 import toppingCacheModel from "../toppingCache/toppingCacheModel";
+import couponModel from "../coupons/couponModel";
 
 export class OrderController {
   create = async (req: Request, res: Response) => {
@@ -15,8 +16,19 @@ export class OrderController {
     if (!isEmpty) {
       return res.status(400).send({ errors: validationResult(req).array() });
     }
+
     const totalPrice = await this.calculateTotal(req.body.cart);
-    return res.send({ totalPrice: totalPrice });
+    let discountPercentage = 0;
+    const couponCode = req.body.couponCode;
+    const tenantId = req.body.tenantId;
+    if (couponCode) {
+      discountPercentage = await this.getDiscountPercentage(
+        couponCode,
+        tenantId,
+      );
+    }
+    const discountAmount = Math.round(totalPrice * (discountPercentage / 100));
+    return res.send({ discountAmount: discountAmount });
   };
 
   private calculateTotal = async (cart: CartItem[]) => {
@@ -72,10 +84,9 @@ export class OrderController {
       console.error(
         `No pricing information found for product with ID ${item._id}`,
       );
-      return toppingsTotal; // Return just the toppings total if no product price is found
+      return toppingsTotal;
     }
 
-    // Calculate the total price based on the price configuration of the product
     const productTotal = Object.entries(
       item.chosenConfiguration.priceConfiguration,
     ).reduce((acc, [key, value]) => {
@@ -98,6 +109,24 @@ export class OrderController {
       return topping.price;
     }
     return currentTopping.price;
+  };
+  private getDiscountPercentage = async (
+    couponCode: string,
+    tenantId: string,
+  ) => {
+    const code = await couponModel.findOne({
+      code: couponCode,
+      tenantId,
+    });
+    if (!code) {
+      return 0;
+    }
+    const currentDate = new Date();
+    const couponDate = new Date(code.validUpto);
+    if (currentDate <= couponDate) {
+      return code.discount;
+    }
+    return 0;
   };
 
   get = async (req: Request, res: Response) => {
