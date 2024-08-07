@@ -9,9 +9,22 @@ export class StripeGW implements PaymentGW {
   async createSession(options: PaymentOptions) {
     const session = await this.stripe.checkout.sessions.create(
       {
+        // customer_email: options.email,
         metadata: {
           orderId: options.orderId,
         },
+        billing_address_collection: "required",
+        // payment_intent_data: {
+        //   shipping: {
+        //     name: "Naresh Dhamu",
+        //     address: {
+        //       line1: "some line",
+        //       city: "Mumbai",
+        //       country: "India",
+        //       postal_code: "400054",
+        //     },
+        //   },
+        // },
         line_items: [
           {
             price_data: {

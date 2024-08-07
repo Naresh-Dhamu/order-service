@@ -92,6 +92,7 @@ export class OrderController {
         await session.endSession();
       }
     }
+
     const session = await this.paymentGw.createSession({
       amount: finalTotal,
       orderId: newOrder[0]._id.toString(),
