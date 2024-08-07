@@ -28,7 +28,11 @@ export class OrderController {
       );
     }
     const discountAmount = Math.round(totalPrice * (discountPercentage / 100));
-    return res.send({ discountAmount: discountAmount });
+    const priceAfterDiscount = totalPrice - discountAmount;
+    const TATEX_PERCENT = 18;
+    const taxes = Math.round((priceAfterDiscount * TATEX_PERCENT) / 100);
+
+    return res.send({ taxes: taxes });
   };
 
   private calculateTotal = async (cart: CartItem[]) => {
