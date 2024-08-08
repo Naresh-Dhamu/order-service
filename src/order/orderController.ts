@@ -292,4 +292,31 @@ export class OrderController {
     }
     return next(createHttpError(403, "Not allowed"));
   };
+  changeStatus = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    const { role, tenant: tenantId } = req.auth;
+    const orderId = req.params.orderId;
+    if (role === ROLES.MANAGER || ROLES.ADMIN) {
+      const order = await orderModel.findOne({ _id: orderId });
+      if (!order) {
+        return next(createHttpError(400, "Order does not exist."));
+      }
+      const isMyRestaurantOrder = order.tenantId === tenantId;
+      if (role === ROLES.MANAGER && !isMyRestaurantOrder) {
+        return next(createHttpError(403, "Operation not permitted"));
+      }
+      const updateOrder = await orderModel.findOneAndUpdate(
+        { _id: orderId },
+        { orderStatus: req.body.status },
+        { new: true },
+      );
+
+      await this.broker.sendMessage("order", JSON.stringify(updateOrder));
+      return res.json({ _id: updateOrder._id });
+    }
+    return next(createHttpError(403, "Not allowed"));
+  };
 }
