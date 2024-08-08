@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { PaymentGW } from "./paymentTypes";
 import orderModel from "../order/orderModel";
-import { PaymentStatus } from "../order/orderTypes";
+import { OrderEvents, PaymentStatus } from "../order/orderTypes";
 import { MessageBroker } from "../types/broker";
 
 export class PaymentController {
@@ -30,7 +30,15 @@ export class PaymentController {
           new: true,
         },
       );
-      await this.broker.sendMessage("order", JSON.stringify(updateOrder));
+      const brokerMessage = {
+        event_type: OrderEvents.PAYMENT_STATUS_UPDATED,
+        data: updateOrder,
+      };
+      await this.broker.sendMessage(
+        "order",
+        JSON.stringify(brokerMessage),
+        updateOrder._id.toString(),
+      );
     }
     return res.json({ success: true });
   };

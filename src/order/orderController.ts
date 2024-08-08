@@ -12,7 +12,12 @@ import productCacheModel from "../productCache/productCacheModel";
 import toppingCacheModel from "../toppingCache/toppingCacheModel";
 import couponModel from "../coupons/couponModel";
 import orderModel from "./orderModel";
-import { OrderStatus, PaymentMode, PaymentStatus } from "./orderTypes";
+import {
+  OrderEvents,
+  OrderStatus,
+  PaymentMode,
+  PaymentStatus,
+} from "./orderTypes";
 import idempotencyModel from "../idempotency/idempotencyModel";
 import mongoose from "mongoose";
 import createHttpError from "http-errors";
@@ -97,6 +102,10 @@ export class OrderController {
         await session.endSession();
       }
     }
+    const brokerMessage = {
+      event_type: OrderEvents.ORDER_CREATED,
+      data: newOrder[0],
+    };
     if (paymentMode === PaymentMode.CARD) {
       const session = await this.paymentGw.createSession({
         amount: finalTotal,
@@ -105,10 +114,21 @@ export class OrderController {
         currency: "inr",
         idempotentKey: idempotencyKey as string,
       });
-      await this.broker.sendMessage("order", JSON.stringify(newOrder));
+
+      await this.broker.sendMessage(
+        "order",
+        JSON.stringify(brokerMessage),
+        newOrder[0]._id.toString(),
+      );
       return res.send({ paymentUrl: session.paymentUrl });
     }
-    await this.broker.sendMessage("order", JSON.stringify(newOrder));
+
+    await this.broker.sendMessage(
+      "order",
+      JSON.stringify(brokerMessage),
+      newOrder[0]._id.toString(),
+    );
+
     return res.json({ paymentUrl: null });
   };
 
@@ -313,8 +333,15 @@ export class OrderController {
         { orderStatus: req.body.status },
         { new: true },
       );
-
-      await this.broker.sendMessage("order", JSON.stringify(updateOrder));
+      const brokerMessage = {
+        event_type: OrderEvents.ORDER_STATUS_UPDATED,
+        data: updateOrder,
+      };
+      await this.broker.sendMessage(
+        "order",
+        JSON.stringify(brokerMessage),
+        updateOrder._id.toString(),
+      );
       return res.json({ _id: updateOrder._id });
     }
     return next(createHttpError(403, "Not allowed"));
