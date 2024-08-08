@@ -4,6 +4,7 @@ import { validationResult } from "express-validator";
 import {
   CartItem,
   ProductPricingCache,
+  ROLES,
   Topping,
   ToppingPricingCache,
 } from "../types";
@@ -231,12 +232,18 @@ export class OrderController {
     const fields = req.query.fields
       ? req.query.fields.toString().split(",")
       : [];
-    const projection = fields.reduce((acc, field) => {
-      acc[field] = 1;
+    const projection = fields.reduce(
+      (acc, field) => {
+        acc[field] = 1;
 
-      return acc;
-    }, {});
-    const order = await orderModel.findOne({ _id: orderId }, projection);
+        return acc;
+      },
+      { customerId: 1, tenantId: 1 },
+    );
+    const order = await orderModel
+      .findOne({ _id: orderId }, projection)
+      .populate("customerId")
+      .exec();
     if (!order) {
       return next(createHttpError(400, "Order does not exist."));
     }
@@ -244,20 +251,45 @@ export class OrderController {
       return res.json(order);
     }
     const myRestaurantOrder = order.tenantId === tenantId;
-    console.log("myRestaurantOrder", myRestaurantOrder);
     if (role === "manager" && myRestaurantOrder) {
       return res.json(order);
     }
     if (role === "customer") {
       const customer = await customerModel.findOne({ userId });
-      console.log("customer", customer);
       if (!customer) {
         return next(createHttpError(400, "No customer found"));
       }
-      if (order.customerId.toString() === customer._id.toString()) {
+      if (order.customerId._id.toString() === customer._id.toString()) {
         return res.json(order);
       }
     }
     return next(createHttpError(403, "Operation not permitted"));
+  };
+  getAll = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const { role, tenant: userTenantId } = req.auth;
+    const tenantId = req.query.tenantId;
+    if (role === ROLES.CUSTOMER) {
+      return next(createHttpError(403, "Not allowed"));
+    }
+    if (role === ROLES.ADMIN) {
+      const filter = {};
+      if (tenantId) {
+        filter["tenantId"] = tenantId;
+      }
+      const orders = await orderModel
+        .find(filter, {}, { sort: { createdAt: -1 } })
+        .populate("customerId")
+        .exec();
+
+      return res.json(orders);
+    }
+    if (role === ROLES.MANAGER) {
+      const orders = await orderModel
+        .find({ tenantId: userTenantId }, {}, { sort: { createdAt: -1 } })
+        .populate("customerId")
+        .exec();
+      return res.json(orders);
+    }
+    return next(createHttpError(403, "Not allowed"));
   };
 }
