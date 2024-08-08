@@ -224,4 +224,32 @@ export class OrderController {
     );
     return res.json(orders);
   };
+  getById = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const orderId = req.params.orderId;
+    const { _id: userId, role, tenant: tenantId } = req.auth;
+
+    const order = await orderModel.findOne({ _id: orderId });
+    if (!order) {
+      return next(createHttpError(400, "Order does not exist."));
+    }
+    if (role === "admin") {
+      return res.json(order);
+    }
+    const myRestaurantOrder = order.tenantId === tenantId;
+    console.log("myRestaurantOrder", myRestaurantOrder);
+    if (role === "manager" && myRestaurantOrder) {
+      return res.json(order);
+    }
+    if (role === "customer") {
+      const customer = await customerModel.findOne({ userId });
+      console.log("customer", customer);
+      if (!customer) {
+        return next(createHttpError(400, "No customer found"));
+      }
+      if (order.customerId.toString() === customer._id.toString()) {
+        return res.json(order);
+      }
+    }
+    return next(createHttpError(403, "Operation not permitted"));
+  };
 }
