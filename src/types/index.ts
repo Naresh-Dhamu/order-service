@@ -36,13 +36,33 @@ export interface ToppingPricingCache {
   price: number;
 }
 
-export interface ProductMessage {
-  id: string;
-  priceConfiguration: PriceConfiguration;
+export enum ProductEvents {
+  PRODUCT_CREATED = "PRODUCT_CREATED",
+  PRODUCT_UPDATED = "PRODUCT_UPDATED",
+  PRODUCT_DELETED = "PRODUCT_DELETED",
 }
+
+export interface ProductMessage {
+  event_type: ProductEvents;
+  data: {
+    id: string;
+    priceConfiguration: PriceConfiguration;
+  };
+}
+
+export enum ToppingEvents {
+  TOPPING_CREATED = "TOPPING_CREATED",
+  TOPPING_UPDATED = "TOPPING_UPDATED",
+  TOPPING_DELETED = "TOPPING_DELETED",
+}
+
 export interface ToppingMessage {
-  _id: string;
-  price: number;
+  event_type: ToppingEvents;
+  data: {
+    _id: string;
+    price: string;
+    tenantId: string;
+  };
 }
 
 export type ProductPriceConfiguration = {
